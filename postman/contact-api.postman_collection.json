@@ -1,0 +1,1451 @@
+{
+  "info": {
+    "_postman_id": "463eeac2-66cb-4213-95ca-07531b9ea737",
+    "name": "Contact API - create contact",
+    "description": "Набір запитів до методу створення контакту умовної системи ContactHub CRM.\n\nКолекція повторює тест-кейси з test-cases/contact-add-testcases.md.\nКожен кейс самодостатній: сам створює потрібний стан у Setup-запиті і сам прибирає за собою у Cleanup-запиті. Набір можна прогнати повторно і отримати той самий результат.\n\nУвага. Метод видалення у вихідній специфікації не описаний. Cleanup-запити побудовані на припущенні DELETE /api/v1/contacts/{id} і потребують підтвердження від команди розробки. Якщо такого методу немає, постумови виконуються вручну через інтерфейс системи або через базу.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 Positive",
+      "item": [
+        {
+          "name": "TC-001 Створення контакту з усіма заповненими валідними полями",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nУ базі немає контакту з Code CT-001 і немає контакту з MobilePhone +380671110001\n\nОчікуваний результат\nКонтакт створено. Усі шість переданих значень збережені у відповідні поля згідно мапінгу. Поле Стать має значення Жіночий.\n\nПостумови\nСтворений контакт CT-001 видалено з бази",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-001\",\n  \"Name\": \"Test User Alpha\",\n  \"MobilePhone\": \"+380671110001\",\n  \"Email\": \"test.alpha@example.com\",\n  \"BirthDate\": \"1990-05-14\",\n  \"GenderCode\": \"0\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 2xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"Відповідь у форматі JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "// Зберігаємо ідентифікатор створеного запису для постумови.",
+                  "// Назва поля з id уточнюється після отримання реальної структури відповіді.",
+                  "try {",
+                  "    var body = pm.response.json();",
+                  "    var id = body.Id || body.id || (body.data && (body.data.Id || body.data.id));",
+                  "    if (id) {",
+                  "        pm.collectionVariables.set(\"tc001_id\", id);",
+                  "    } else {",
+                  "        console.warn(\"Id створеного контакту не знайдено у відповіді, постумову треба виконати вручну\");",
+                  "    }",
+                  "} catch (e) {",
+                  "    console.warn(\"Тіло відповіді не є валідним JSON\");",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-001 Cleanup: видалення створеного контакту",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts/{{tc001_id}}",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts/{{tc001_id}}"
+              ]
+            },
+            "description": "Постумова кейса TC-001. Видаляє запис, створений попереднім запитом, щоб набір можна було прогнати повторно."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Запис видалено або вже відсутній\", function () {",
+                  "    pm.expect([200, 202, 204, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-002 Створення контакту тільки з обовʼязковими полями",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nУ базі немає контакту з Code CT-002 і немає контакту з MobilePhone +380671110002\n\nОчікуваний результат\nКонтакт створено. Поля Name, Email, BirthDate і Gender лишаються порожніми, помилки валідації немає.\n\nПостумови\nСтворений контакт CT-002 видалено з бази",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-002\",\n  \"MobilePhone\": \"+380671110002\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 2xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"Відповідь у форматі JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "// Зберігаємо ідентифікатор створеного запису для постумови.",
+                  "// Назва поля з id уточнюється після отримання реальної структури відповіді.",
+                  "try {",
+                  "    var body = pm.response.json();",
+                  "    var id = body.Id || body.id || (body.data && (body.data.Id || body.data.id));",
+                  "    if (id) {",
+                  "        pm.collectionVariables.set(\"tc002_id\", id);",
+                  "    } else {",
+                  "        console.warn(\"Id створеного контакту не знайдено у відповіді, постумову треба виконати вручну\");",
+                  "    }",
+                  "} catch (e) {",
+                  "    console.warn(\"Тіло відповіді не є валідним JSON\");",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-002 Cleanup: видалення створеного контакту",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts/{{tc002_id}}",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts/{{tc002_id}}"
+              ]
+            },
+            "description": "Постумова кейса TC-002. Видаляє запис, створений попереднім запитом, щоб набір можна було прогнати повторно."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Запис видалено або вже відсутній\", function () {",
+                  "    pm.expect([200, 202, 204, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-003 Мапінг довідника статі для значення 0",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nУ базі немає контакту з Code CT-003 і немає контакту з MobilePhone +380671110003\n\nОчікуваний результат\nКонтакт створено, у полі Стать записано значення Жіночий згідно довідника\n\nПостумови\nСтворений контакт CT-003 видалено з бази",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-003\",\n  \"MobilePhone\": \"+380671110003\",\n  \"GenderCode\": \"0\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 2xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"Відповідь у форматі JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "// Зберігаємо ідентифікатор створеного запису для постумови.",
+                  "// Назва поля з id уточнюється після отримання реальної структури відповіді.",
+                  "try {",
+                  "    var body = pm.response.json();",
+                  "    var id = body.Id || body.id || (body.data && (body.data.Id || body.data.id));",
+                  "    if (id) {",
+                  "        pm.collectionVariables.set(\"tc003_id\", id);",
+                  "    } else {",
+                  "        console.warn(\"Id створеного контакту не знайдено у відповіді, постумову треба виконати вручну\");",
+                  "    }",
+                  "} catch (e) {",
+                  "    console.warn(\"Тіло відповіді не є валідним JSON\");",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-003 Cleanup: видалення створеного контакту",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts/{{tc003_id}}",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts/{{tc003_id}}"
+              ]
+            },
+            "description": "Постумова кейса TC-003. Видаляє запис, створений попереднім запитом, щоб набір можна було прогнати повторно."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Запис видалено або вже відсутній\", function () {",
+                  "    pm.expect([200, 202, 204, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-004 Мапінг довідника статі для значення 1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nУ базі немає контакту з Code CT-004 і немає контакту з MobilePhone +380671110004\n\nОчікуваний результат\nКонтакт створено, у полі Стать записано значення Чоловічий згідно довідника\n\nПостумови\nСтворений контакт CT-004 видалено з бази",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-004\",\n  \"MobilePhone\": \"+380671110004\",\n  \"GenderCode\": \"1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 2xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"Відповідь у форматі JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "// Зберігаємо ідентифікатор створеного запису для постумови.",
+                  "// Назва поля з id уточнюється після отримання реальної структури відповіді.",
+                  "try {",
+                  "    var body = pm.response.json();",
+                  "    var id = body.Id || body.id || (body.data && (body.data.Id || body.data.id));",
+                  "    if (id) {",
+                  "        pm.collectionVariables.set(\"tc004_id\", id);",
+                  "    } else {",
+                  "        console.warn(\"Id створеного контакту не знайдено у відповіді, постумову треба виконати вручну\");",
+                  "    }",
+                  "} catch (e) {",
+                  "    console.warn(\"Тіло відповіді не є валідним JSON\");",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-004 Cleanup: видалення створеного контакту",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts/{{tc004_id}}",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts/{{tc004_id}}"
+              ]
+            },
+            "description": "Постумова кейса TC-004. Видаляє запис, створений попереднім запитом, щоб набір можна було прогнати повторно."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Запис видалено або вже відсутній\", function () {",
+                  "    pm.expect([200, 202, 204, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-005 Повторне створення після видалення попереднього запису",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nКонтакт з Code CT-005 і MobilePhone +380671110005 створено і одразу видалено з бази\n\nОчікуваний результат\nКонтакт створено успішно. Перевірка унікальності рахує тільки фактично наявні записи, а не історію значень.\n\nПостумови\nСтворений контакт CT-005 видалено з бази\n\nКоментар\nКейс підтверджує коректність постумов у решті позитивних кейсів. Запускати після ручного прогону підготовчого створення і видалення.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-005\",\n  \"MobilePhone\": \"+380671110005\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 2xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"Відповідь у форматі JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "// Зберігаємо ідентифікатор створеного запису для постумови.",
+                  "// Назва поля з id уточнюється після отримання реальної структури відповіді.",
+                  "try {",
+                  "    var body = pm.response.json();",
+                  "    var id = body.Id || body.id || (body.data && (body.data.Id || body.data.id));",
+                  "    if (id) {",
+                  "        pm.collectionVariables.set(\"tc005_id\", id);",
+                  "    } else {",
+                  "        console.warn(\"Id створеного контакту не знайдено у відповіді, постумову треба виконати вручну\");",
+                  "    }",
+                  "} catch (e) {",
+                  "    console.warn(\"Тіло відповіді не є валідним JSON\");",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-005 Cleanup: видалення створеного контакту",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts/{{tc005_id}}",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts/{{tc005_id}}"
+              ]
+            },
+            "description": "Постумова кейса TC-005. Видаляє запис, створений попереднім запитом, щоб набір можна було прогнати повторно."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Запис видалено або вже відсутній\", function () {",
+                  "    pm.expect([200, 202, 204, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Negative",
+      "item": [
+        {
+          "name": "TC-006 Створення без обовʼязкового поля Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nУ базі немає контакту з MobilePhone +380671110006\n\nОчікуваний результат\nЗапит відхилено з помилкою валідації, у відповіді вказано що поле Code обовʼязкове. Контакт не створено.\n\nПостумови\nДодаткових даних не створено, прибирання не потрібне",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"Test User Beta\",\n  \"MobilePhone\": \"+380671110006\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 4xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(400, 499);",
+                  "});",
+                  "",
+                  "pm.test(\"Запит не завершився успішним створенням\", function () {",
+                  "    pm.expect(pm.response.code).to.not.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"У відповіді присутнє повідомлення про помилку\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-007 Створення без обовʼязкового поля MobilePhone",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nУ базі немає контакту з Code CT-007\n\nОчікуваний результат\nЗапит відхилено з помилкою валідації по полю MobilePhone. Контакт не створено.\n\nПостумови\nДодаткових даних не створено, прибирання не потрібне",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-007\",\n  \"Name\": \"Test User Gamma\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 4xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(400, 499);",
+                  "});",
+                  "",
+                  "pm.test(\"Запит не завершився успішним створенням\", function () {",
+                  "    pm.expect(pm.response.code).to.not.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"У відповіді присутнє повідомлення про помилку\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-008 Порожні значення в обовʼязкових полях",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nСпеціальних передумов немає\n\nОчікуваний результат\nЗапит відхилено. Порожній рядок не приймається як валідне значення обовʼязкового поля. Контакт не створено.\n\nПостумови\nДодаткових даних не створено, прибирання не потрібне\n\nКоментар\nВідрізняється від TC-006 і TC-007: там ключ відсутній у тілі запиту, тут переданий без значення. Це різні гілки валідації.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"\",\n  \"Name\": \"\",\n  \"MobilePhone\": \"\",\n  \"Email\": \"\",\n  \"BirthDate\": \"\",\n  \"GenderCode\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 4xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(400, 499);",
+                  "});",
+                  "",
+                  "pm.test(\"Запит не завершився успішним створенням\", function () {",
+                  "    pm.expect(pm.response.code).to.not.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"У відповіді присутнє повідомлення про помилку\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-009 Setup: створення підготовчого контакту",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумова кейса TC-009. Створює запис, з яким далі перевіряється конфлікт ідентифікаторів.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-901\",\n  \"Name\": \"Setup contact for TC-009\",\n  \"MobilePhone\": \"+380671990001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 2xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"Відповідь у форматі JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "// Зберігаємо ідентифікатор створеного запису для постумови.",
+                  "// Назва поля з id уточнюється після отримання реальної структури відповіді.",
+                  "try {",
+                  "    var body = pm.response.json();",
+                  "    var id = body.Id || body.id || (body.data && (body.data.Id || body.data.id));",
+                  "    if (id) {",
+                  "        pm.collectionVariables.set(\"tc009_setup_id\", id);",
+                  "    } else {",
+                  "        console.warn(\"Id створеного контакту не знайдено у відповіді, постумову треба виконати вручну\");",
+                  "    }",
+                  "} catch (e) {",
+                  "    console.warn(\"Тіло відповіді не є валідним JSON\");",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-009 Дублювання Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nУ базі існує контакт з Code CT-901 і MobilePhone +380671990001\n\nОчікуваний результат\nЗапит відхилено через дублювання Code. Другий контакт не створено. Дані існуючого контакту не змінено.\n\nПостумови\nПідготовчий контакт CT-901 видалено з бази\n\nКоментар\nПоведінка при дублюванні Code не описана у специфікації. Очікуваний результат сформульовано з припущення про унікальність поля.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-901\",\n  \"Name\": \"Test User Delta\",\n  \"MobilePhone\": \"+380671110009\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 4xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(400, 499);",
+                  "});",
+                  "",
+                  "pm.test(\"Запит не завершився успішним створенням\", function () {",
+                  "    pm.expect(pm.response.code).to.not.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"У відповіді присутнє повідомлення про помилку\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-009 Cleanup: видалення підготовчого контакту",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts/{{tc009_setup_id}}",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts/{{tc009_setup_id}}"
+              ]
+            },
+            "description": "Постумова кейса TC-009. Прибирає підготовчі дані, щоб набір можна було прогнати повторно."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Запис видалено або вже відсутній\", function () {",
+                  "    pm.expect([200, 202, 204, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-010 Setup: створення підготовчого контакту",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумова кейса TC-010. Створює запис, з яким далі перевіряється конфлікт ідентифікаторів.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-902\",\n  \"Name\": \"Setup contact for TC-010\",\n  \"MobilePhone\": \"+380671990002\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 2xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"Відповідь у форматі JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "// Зберігаємо ідентифікатор створеного запису для постумови.",
+                  "// Назва поля з id уточнюється після отримання реальної структури відповіді.",
+                  "try {",
+                  "    var body = pm.response.json();",
+                  "    var id = body.Id || body.id || (body.data && (body.data.Id || body.data.id));",
+                  "    if (id) {",
+                  "        pm.collectionVariables.set(\"tc010_setup_id\", id);",
+                  "    } else {",
+                  "        console.warn(\"Id створеного контакту не знайдено у відповіді, постумову треба виконати вручну\");",
+                  "    }",
+                  "} catch (e) {",
+                  "    console.warn(\"Тіло відповіді не є валідним JSON\");",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-010 Дублювання MobilePhone",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nУ базі існує контакт з Code CT-902 і MobilePhone +380671990002\n\nОчікуваний результат\nЗапит відхилено через дублювання номера телефону. Другий контакт не створено.\n\nПостумови\nПідготовчий контакт CT-902 видалено з бази\n\nКоментар\nMobilePhone є обовʼязковим полем і фактично ідентифікує людину в CRM, тому перевірка на дубль потрібна для нього так само, як для Code.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-010\",\n  \"Name\": \"Test User Epsilon\",\n  \"MobilePhone\": \"+380671990002\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 4xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(400, 499);",
+                  "});",
+                  "",
+                  "pm.test(\"Запит не завершився успішним створенням\", function () {",
+                  "    pm.expect(pm.response.code).to.not.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"У відповіді присутнє повідомлення про помилку\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-010 Cleanup: видалення підготовчого контакту",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts/{{tc010_setup_id}}",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts/{{tc010_setup_id}}"
+              ]
+            },
+            "description": "Постумова кейса TC-010. Прибирає підготовчі дані, щоб набір можна було прогнати повторно."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Запис видалено або вже відсутній\", function () {",
+                  "    pm.expect([200, 202, 204, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-011 Setup: створення підготовчого контакту",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумова кейса TC-011. Створює запис, з яким далі перевіряється конфлікт ідентифікаторів.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-903\",\n  \"Name\": \"Setup contact for TC-011\",\n  \"MobilePhone\": \"+380671990003\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 2xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"Відповідь у форматі JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "// Зберігаємо ідентифікатор створеного запису для постумови.",
+                  "// Назва поля з id уточнюється після отримання реальної структури відповіді.",
+                  "try {",
+                  "    var body = pm.response.json();",
+                  "    var id = body.Id || body.id || (body.data && (body.data.Id || body.data.id));",
+                  "    if (id) {",
+                  "        pm.collectionVariables.set(\"tc011_setup_id\", id);",
+                  "    } else {",
+                  "        console.warn(\"Id створеного контакту не знайдено у відповіді, постумову треба виконати вручну\");",
+                  "    }",
+                  "} catch (e) {",
+                  "    console.warn(\"Тіло відповіді не є валідним JSON\");",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-011 Дублювання Code і MobilePhone одночасно",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nУ базі існує контакт з Code CT-903 і MobilePhone +380671990003\n\nОчікуваний результат\nЗапит відхилено. Другий контакт не створено, дані існуючого контакту не змінено.\n\nПостумови\nПідготовчий контакт CT-903 видалено з бази\n\nКоментар\nПеревіряє обробку повного збігу обох ідентифікаторів, а не тільки збігу по одному полю.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-903\",\n  \"Name\": \"Test User Zeta\",\n  \"MobilePhone\": \"+380671990003\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 4xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(400, 499);",
+                  "});",
+                  "",
+                  "pm.test(\"Запит не завершився успішним створенням\", function () {",
+                  "    pm.expect(pm.response.code).to.not.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"У відповіді присутнє повідомлення про помилку\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-011 Cleanup: видалення підготовчого контакту",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts/{{tc011_setup_id}}",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts/{{tc011_setup_id}}"
+              ]
+            },
+            "description": "Постумова кейса TC-011. Прибирає підготовчі дані, щоб набір можна було прогнати повторно."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Запис видалено або вже відсутній\", function () {",
+                  "    pm.expect([200, 202, 204, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-012 Email без символу @",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nУ базі немає контакту з Code CT-012\n\nОчікуваний результат\nЗапит відхилено з помилкою валідації формату Email. Контакт не створено.\n\nПостумови\nДодаткових даних не створено, прибирання не потрібне",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-012\",\n  \"MobilePhone\": \"+380671110012\",\n  \"Email\": \"test.user.example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 4xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(400, 499);",
+                  "});",
+                  "",
+                  "pm.test(\"Запит не завершився успішним створенням\", function () {",
+                  "    pm.expect(pm.response.code).to.not.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"У відповіді присутнє повідомлення про помилку\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-013 Email без доменної частини",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nУ базі немає контакту з Code CT-013\n\nОчікуваний результат\nЗапит відхилено з помилкою валідації формату Email. Контакт не створено.\n\nПостумови\nДодаткових даних не створено, прибирання не потрібне",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-013\",\n  \"MobilePhone\": \"+380671110013\",\n  \"Email\": \"test.user@\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 4xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(400, 499);",
+                  "});",
+                  "",
+                  "pm.test(\"Запит не завершився успішним створенням\", function () {",
+                  "    pm.expect(pm.response.code).to.not.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"У відповіді присутнє повідомлення про помилку\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-014 GenderCode поза довідником",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nУ базі немає контакту з Code CT-014\n\nОчікуваний результат\nЗапит відхилено. Довідник передбачає тільки значення 0 і 1. Контакт не створено.\n\nПостумови\nДодаткових даних не створено, прибирання не потрібне",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-014\",\n  \"MobilePhone\": \"+380671110014\",\n  \"GenderCode\": \"2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 4xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(400, 499);",
+                  "});",
+                  "",
+                  "pm.test(\"Запит не завершився успішним створенням\", function () {",
+                  "    pm.expect(pm.response.code).to.not.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"У відповіді присутнє повідомлення про помилку\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-015 Неіснуюча дата народження",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nУ базі немає контакту з Code CT-015\n\nОчікуваний результат\nЗапит відхилено з помилкою валідації поля BirthDate. Контакт не створено. Система не підставляє найближчу валідну дату замість переданої.\n\nПостумови\nДодаткових даних не створено, прибирання не потрібне",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-015\",\n  \"MobilePhone\": \"+380671110015\",\n  \"BirthDate\": \"2000-02-31\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 4xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(400, 499);",
+                  "});",
+                  "",
+                  "pm.test(\"Запит не завершився успішним створенням\", function () {",
+                  "    pm.expect(pm.response.code).to.not.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"У відповіді присутнє повідомлення про помилку\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-016 Невірний формат дати народження",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nУ базі немає контакту з Code CT-016\n\nОчікуваний результат\nЗапит відхилено з помилкою валідації формату дати. Контакт не створено.\n\nПостумови\nДодаткових даних не створено, прибирання не потрібне",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-016\",\n  \"MobilePhone\": \"+380671110016\",\n  \"BirthDate\": \"14.05.1990\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 4xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(400, 499);",
+                  "});",
+                  "",
+                  "pm.test(\"Запит не завершився успішним створенням\", function () {",
+                  "    pm.expect(pm.response.code).to.not.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"У відповіді присутнє повідомлення про помилку\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-017 Дата народження у майбутньому",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/contacts",
+              "host": [
+                "{{baseUrl}}/api/v1/contacts"
+              ]
+            },
+            "description": "Передумови\nУ базі немає контакту з Code CT-017\n\nОчікуваний результат\nЗапит відхилено. Дата народження не може бути пізнішою за поточну дату. Контакт не створено.\n\nПостумови\nДодаткових даних не створено, прибирання не потрібне\n\nКоментар\nОбмеження не описане у специфікації, очікуваний результат сформульовано з бізнесової логіки поля.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Code\": \"CT-017\",\n  \"MobilePhone\": \"+380671110017\",\n  \"BirthDate\": \"2099-01-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Час відповіді менший за 3000 мс\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Код відповіді у діапазоні 4xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(400, 499);",
+                  "});",
+                  "",
+                  "pm.test(\"Запит не завершився успішним створенням\", function () {",
+                  "    pm.expect(pm.response.code).to.not.be.within(200, 299);",
+                  "});",
+                  "",
+                  "pm.test(\"У відповіді присутнє повідомлення про помилку\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://contacthub.example.com",
+      "type": "string"
+    },
+    {
+      "key": "tc001_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tc002_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tc003_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tc004_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tc005_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tc009_setup_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tc010_setup_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tc011_setup_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
